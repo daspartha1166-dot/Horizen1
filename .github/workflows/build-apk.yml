@@ -17,6 +17,19 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Extract Android project from ZIP
+        run: |
+          unzip -q Horizen-final.zip -d extracted
+          GRADLEW_PATH="$(find extracted -type f -name gradlew -print -quit)"
+          if [ -z "$GRADLEW_PATH" ]; then
+            echo "ERROR: Could not find gradlew inside ZIP"
+            find extracted -maxdepth 4 -type f | head -100
+            exit 1
+          fi
+          PROJECT_DIR="$(dirname "$GRADLEW_PATH")"
+          echo "Project directory: $PROJECT_DIR"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -28,14 +41,16 @@ jobs:
 
       - name: Build debug APK
         run: |
+          cd "$PROJECT_DIR"
           chmod +x gradlew
           ./gradlew :app:assembleDebug
+          cp app/build/outputs/apk/debug/*.apk "$GITHUB_WORKSPACE/"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Horizen1-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: "*.apk"
           if-no-files-found: error
           retention-days: 7
           
