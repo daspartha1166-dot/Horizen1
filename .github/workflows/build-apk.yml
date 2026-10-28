@@ -23,7 +23,7 @@ jobs:
           GRADLEW_PATH="$(find extracted -type f -name gradlew -print -quit)"
           if [ -z "$GRADLEW_PATH" ]; then
             echo "ERROR: Could not find gradlew inside ZIP"
-            find extracted -maxdepth 4 -type f | head -100
+            find extracted -maxdepth 5 -type f | head -100
             exit 1
           fi
           PROJECT_DIR="$(dirname "$GRADLEW_PATH")"
@@ -38,6 +38,19 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+
+      - name: Create Android debug keystore
+        run: |
+          mkdir -p "$HOME/.android"
+          keytool -genkeypair -v \
+            -keystore "$HOME/.android/debug.keystore" \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build debug APK
         run: |
